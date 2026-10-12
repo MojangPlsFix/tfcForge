@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TFC Forge Helper</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="panel">
+    <h1>TFC Forge Helper</h1>
+
+    <section id="shot-box" class="shot">
+      <input id="shot-file" class="visually-hidden" type="file" accept="image/*">
+      <label class="shot-button" for="shot-file">Choose screenshot</label>
+      <span class="help">or paste it (Ctrl+V) or drop it on the page</span>
+      <p id="shot-status" class="shot-status" role="status"></p>
+    </section>
+
+    <section class="values">
+      <div class="field">
+        <label for="target">Target</label>
+        <input id="target" type="number" min="0" max="150" step="1" inputmode="numeric" aria-describedby="target-help target-error">
+        <p class="help" id="target-help">Red marker on the bar</p>
+        <p class="error" id="target-error"></p>
+      </div>
+      <div class="field">
+        <label for="start">Start</label>
+        <input id="start" type="number" min="0" max="150" step="1" value="0" inputmode="numeric" aria-describedby="start-help start-error">
+        <p class="help" id="start-help">Green marker; 0 for a fresh piece</p>
+        <p class="error" id="start-error"></p>
+      </div>
+    </section>
+
+    <section id="rules-box">
+      <h2>Rules (top of the anvil)</h2>
+      <div id="rules" class="columns"></div>
+    </section>
+
+    <section id="result" aria-live="polite"></section>
+  </main>
+
+  <footer>Icons: "Perfected Anvil Helper" by Vizzy, derived from "Anvil GUI" by Simon, CC BY 4.0.</footer>
+
+  <script src="dist/app.js"></script>
+</body>
+</html>

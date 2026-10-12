@@ -1,0 +1,19 @@
+{
+  "name": "tfc-forge",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc && esbuild src/app.ts --bundle --format=iife --target=es2022 --outfile=dist/app.js",
+    "typecheck": "tsc",
+    "test": "node --test test/*.test.ts",
+    "icons": "node tools/extract-icons.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  }
+}
