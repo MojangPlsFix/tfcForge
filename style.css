@@ -334,3 +334,7 @@ footer {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+footer a {
+  color: #c8c8c8;
+}
