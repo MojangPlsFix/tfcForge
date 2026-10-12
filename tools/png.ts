@@ -4,7 +4,7 @@ import { convertIndexedToRgb, decode, encode } from 'fast-png';
 export interface PngImage { width: number; height: number; data: Uint8Array } // RGBA, row-major
 
 export function decodePng(bytes: Uint8Array): PngImage {
-  const png = decode(bytes);
+  const png = decode(bytes, { checkCrc: true });
   const pixels = png.palette ? convertIndexedToRgb(png) : png.data;
   const channels = pixels.length / (png.width * png.height);
   if (png.depth !== 8 || channels < 3) throw new Error('unsupported PNG');
