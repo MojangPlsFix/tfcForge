@@ -10,7 +10,7 @@
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import zlib from 'node:zlib';
+import { unzipSync } from 'fflate';
 import { decodePng, encodePng, type PngImage } from './png.ts';
 
 const MEMBER = 'assets/tfc/textures/gui/anvil.png';
@@ -47,33 +47,6 @@ const RULE_SLOT = [59, 7, 79, 29] as const;
 function fail(message: string): never {
   console.error(`error: ${message}`);
   process.exit(1);
-}
-
-/** Reads one entry of a zip archive (stored or deflated), or null when absent. */
-function readZipEntry(zip: Buffer, name: string): Buffer | null {
-  let end = zip.length - 22;
-  while (end >= 0 && zip.readUInt32LE(end) !== 0x06054b50) end--;
-  if (end < 0) throw new Error('not a zip file');
-  const count = zip.readUInt16LE(end + 10);
-  let entry = zip.readUInt32LE(end + 16);
-  for (let i = 0; i < count; i++) {
-    if (zip.readUInt32LE(entry) !== 0x02014b50) throw new Error('corrupt zip central directory');
-    const method = zip.readUInt16LE(entry + 10);
-    const size = zip.readUInt32LE(entry + 20);
-    const nameLen = zip.readUInt16LE(entry + 28);
-    const extraLen = zip.readUInt16LE(entry + 30);
-    const commentLen = zip.readUInt16LE(entry + 32);
-    const local = zip.readUInt32LE(entry + 42);
-    if (zip.toString('utf8', entry + 46, entry + 46 + nameLen) === name) {
-      const start = local + 30 + zip.readUInt16LE(local + 26) + zip.readUInt16LE(local + 28);
-      const data = zip.subarray(start, start + size);
-      if (method === 0) return Buffer.from(data);
-      if (method === 8) return zlib.inflateRawSync(data);
-      throw new Error(`unsupported zip compression ${method}`);
-    }
-    entry += 46 + nameLen + extraLen + commentLen;
-  }
-  return null;
 }
 
 function crop(img: PngImage, x: number, y: number, w: number, h: number): PngImage {
@@ -141,9 +114,9 @@ function main(): void {
     'PrismLauncher/instances/TerraFirmaGreg-Modern/minecraft/resourcepacks/Perfected Anvil Helper.zip',
   );
   if (!existsSync(source) || !statSync(source).isFile()) fail(`${source} not found`);
-  const bytes = source.toLowerCase().endsWith('.zip')
-    ? readZipEntry(readFileSync(source), MEMBER) ?? fail(`${MEMBER} not in ${source}`)
-    : readFileSync(source);
+  const bytes = Buffer.from(source.toLowerCase().endsWith('.zip')
+    ? unzipSync(readFileSync(source), { filter: (f) => f.name === MEMBER })[MEMBER] ?? fail(`${MEMBER} not in ${source}`)
+    : readFileSync(source));
   const texture = decodePng(bytes);
   if (texture.width !== 256 || texture.height !== 256) {
     fail(`expected 256x256 anvil.png, got ${texture.width}x${texture.height}`);
