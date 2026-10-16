@@ -228,6 +228,10 @@ test('placeRules keeps the shortest finish for a nonzero start', () => {
   }
 });
 
+test('placeRules puts Not last into 2nd last when that costs no clicks', () => {
+  assert.deepEqual(S.placeRules(rulesOf('PUNCH/LAST', 'HIT/NOT_LAST'), 0, 57), { ok: true, positions: ['PUNCH', 'HIT', null] });
+});
+
 test('placing TFC recipe rules into fixed positions costs no clicks', () => {
   const recipes = [
     ['BEND/ANY', 'DRAW/ANY', 'HIT/ANY'],

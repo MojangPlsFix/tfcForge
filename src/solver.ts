@@ -179,27 +179,41 @@ export function toPositions(rules: readonly Rule[]): { ok: true; positions: Posi
   return { ok: true, positions };
 }
 
-// Positions each order can be met at, latest first (matching toPositions' scan order).
+// Positions each order can be met at, in display preference: Not last → 2nd last first, Any → last first.
 const ALLOWED_POSITIONS: Record<Order, readonly number[]> = {
-  LAST: [0], SECOND_LAST: [1], THIRD_LAST: [2], NOT_LAST: [2, 1], ANY: [2, 1, 0],
+  LAST: [0], SECOND_LAST: [1], THIRD_LAST: [2], NOT_LAST: [1, 2], ANY: [0, 1, 2],
 };
+const FIXED_ORDERS: readonly Order[] = ['LAST', 'SECOND_LAST', 'THIRD_LAST'];
 
 /**
  * Places game rules (which may use NOT_LAST / ANY) into fixed [last, 2nd last, 3rd last] positions
- * without losing clicks for this start/target: every rule goes where a shortest solution's ending meets it.
- * Fixed positions only narrow the rules, and that solution still meets them, so the minimum is unchanged.
+ * without losing clicks for this start/target. Tries placements in ALLOWED_POSITIONS preference order
+ * and returns the first that is as short as the real rules. One always exists: the ending of a shortest
+ * solution meets every rule at some allowed position.
  * Falls back to TFC's placement (toPositions) when the rules cannot be met at all.
  */
 export function placeRules(rules: readonly Rule[], start: number, target: number): { ok: true; positions: Positions } | { ok: false } {
-  const result = solve({ start, target, rules });
-  if (!result.ok) return toPositions(rules);
-  const ending = result.steps.slice(-3).reverse().map((id) => stepOf(id).type); // [last, 2nd last, 3rd last]
-  const positions: Positions = [null, null, null];
-  for (const rule of rules) {
-    const allowed = ALLOWED_POSITIONS[rule.order];
-    const i = allowed.find((p) => positions[p] === rule.type) ?? allowed.find((p) => ending[p] === rule.type);
-    if (i === undefined) throw new Error('solution does not meet rule ' + rule.type + '/' + rule.order);
-    positions[i] = rule.type;
-  }
+  const best = solve({ start, target, rules });
+  if (!best.ok) return toPositions(rules);
+  const place = (k: number, positions: Positions): Positions | null => {
+    if (k === rules.length) {
+      const fixed = positions.flatMap((type, i) => (type === null ? [] : [{ type, order: FIXED_ORDERS[i] }]));
+      const result = solve({ start, target, rules: fixed });
+      return result.ok && result.steps.length === best.steps.length ? positions : null;
+    }
+    const { type, order } = rules[k];
+    const allowed = ALLOWED_POSITIONS[order];
+    if (allowed.some((p) => positions[p] === type)) return place(k + 1, positions);
+    for (const p of allowed) {
+      if (positions[p] !== null) continue;
+      const next: Positions = [...positions];
+      next[p] = type;
+      const found = place(k + 1, next);
+      if (found) return found;
+    }
+    return null;
+  };
+  const positions = place(0, [null, null, null]);
+  if (!positions) throw new Error('no click-preserving placement found');
   return { ok: true, positions };
 }
